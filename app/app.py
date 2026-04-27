@@ -159,28 +159,78 @@ for exp in explanations:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-
 # -------------------------------
-# GRAPH SECTION (CLEAN)
+# MULTI GRAPH DASHBOARD (DAY 17 🔥)
 # -------------------------------
 st.markdown('<div class="section"></div>', unsafe_allow_html=True)
-st.header("Simulation Graph (BP vs Risk)")
+st.header("Simulation Dashboard")
 
-bp_range = range(90, 180, 5)
-risks = []
+col1, col2, col3 = st.columns(3)
 
-for val in bp_range:
-    temp = input_data.copy()
-    temp['resting_blood_pressure'] = val
-    risks.append(calculate_risk(temp))
+# -------------------------------
+# BP GRAPH
+# -------------------------------
+with col1:
+    st.subheader("Blood Pressure")
 
-graph_df = pd.DataFrame({
-    "Blood Pressure": list(bp_range),
-    "Risk": risks
-}).set_index("Blood Pressure")
+    bp_range = range(90, 180, 5)
+    bp_risks = []
 
-st.line_chart(graph_df)
+    for val in bp_range:
+        temp = input_data.copy()
+        temp['resting_blood_pressure'] = val
+        bp_risks.append(calculate_risk(temp))
 
+    bp_df = pd.DataFrame({
+        "BP": list(bp_range),
+        "Risk": bp_risks
+    }).set_index("BP")
+
+    st.line_chart(bp_df)
+
+
+# -------------------------------
+# CHOLESTEROL GRAPH
+# -------------------------------
+with col2:
+    st.subheader("Cholesterol")
+
+    chol_range = range(150, 350, 10)
+    chol_risks = []
+
+    for val in chol_range:
+        temp = input_data.copy()
+        temp['cholestoral'] = val
+        chol_risks.append(calculate_risk(temp))
+
+    chol_df = pd.DataFrame({
+        "Cholesterol": list(chol_range),
+        "Risk": chol_risks
+    }).set_index("Cholesterol")
+
+    st.line_chart(chol_df)
+
+
+# -------------------------------
+# HEART RATE GRAPH
+# -------------------------------
+with col3:
+    st.subheader("Heart Rate")
+
+    hr_range = range(60, 200, 5)
+    hr_risks = []
+
+    for val in hr_range:
+        temp = input_data.copy()
+        temp['Max_heart_rate'] = val
+        hr_risks.append(calculate_risk(temp))
+
+    hr_df = pd.DataFrame({
+        "Heart Rate": list(hr_range),
+        "Risk": hr_risks
+    }).set_index("Heart Rate")
+
+    st.line_chart(hr_df)
 
 # -------------------------------
 # FOOTER
