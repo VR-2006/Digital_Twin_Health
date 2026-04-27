@@ -4,13 +4,10 @@ import sys
 import os
 
 # -------------------------------
-# FIX IMPORT PATH (IMPORTANT)
+# FIX IMPORT PATH
 # -------------------------------
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# -------------------------------
-# IMPORT CORE LOGIC
-# -------------------------------
 from src.predictor import calculate_risk
 
 
@@ -24,10 +21,40 @@ st.set_page_config(
 
 
 # -------------------------------
-# TITLE SECTION
+# CUSTOM CSS (NEW 🔥)
 # -------------------------------
-st.title("PhysioTwin AI")
-st.subheader("Personalized Health Risk Simulation System")
+st.markdown("""
+<style>
+.big-title {
+    font-size: 42px;
+    font-weight: bold;
+}
+
+.sub-text {
+    color: gray;
+    font-size: 16px;
+}
+
+.card {
+    padding: 20px;
+    border-radius: 12px;
+    background-color: #111827;
+    color: white;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+}
+
+.section {
+    margin-top: 30px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# -------------------------------
+# TITLE SECTION (UPDATED)
+# -------------------------------
+st.markdown('<div class="big-title">PhysioTwin AI</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-text">Personalized Health Simulation System</div>', unsafe_allow_html=True)
 st.write("Simulate how physiological changes affect cardiovascular risk.")
 
 
@@ -35,6 +62,7 @@ st.write("Simulate how physiological changes affect cardiovascular risk.")
 # SIDEBAR INPUTS
 # -------------------------------
 st.sidebar.header("Patient Inputs")
+st.sidebar.markdown("### Adjust Parameters")
 
 age = st.sidebar.slider("Age", 20, 80, 40)
 sex = st.sidebar.selectbox("Sex", ["Male", "Female"])
@@ -90,17 +118,22 @@ risk = calculate_risk(input_data)
 
 
 # -------------------------------
-# RESULT SECTION (IMPROVED UI)
+# RESULT SECTION (CARD STYLE 🔥)
 # -------------------------------
-st.markdown("---")
+st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Risk Assessment")
 
 col1, col2 = st.columns(2)
 
 with col1:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.metric("Risk Probability", f"{risk*100:.2f}%")
+    st.progress(int(risk * 100))
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     if risk > 0.7:
         st.error("High Risk")
     elif risk > 0.4:
@@ -108,29 +141,29 @@ with col2:
     else:
         st.success("Low Risk")
 
-
-# -------------------------------
-# PROGRESS BAR (NEW 🔥)
-# -------------------------------
-st.progress(int(risk * 100))
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # -------------------------------
-# EXPLANATION SECTION
+# EXPLANATION SECTION (CARD)
 # -------------------------------
-st.markdown("---")
+st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Clinical Explanation")
+
+st.markdown('<div class="card">', unsafe_allow_html=True)
 
 explanations = generate_explanation(input_data)
 
 for exp in explanations:
-    st.markdown(f"- **{exp}**")
+    st.write(f"• {exp}")
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 # -------------------------------
-# GRAPH SECTION
+# GRAPH SECTION (CLEAN)
 # -------------------------------
-st.markdown("---")
+st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Simulation Graph (BP vs Risk)")
 
 bp_range = range(90, 180, 5)
