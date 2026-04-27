@@ -14,27 +14,16 @@ from src.predictor import calculate_risk
 # -------------------------------
 # PAGE CONFIG
 # -------------------------------
-st.set_page_config(
-    page_title="PhysioTwin AI",
-    layout="wide"
-)
+st.set_page_config(page_title="PhysioTwin AI", layout="wide")
 
 
 # -------------------------------
-# CUSTOM CSS (NEW 🔥)
+# CUSTOM CSS
 # -------------------------------
 st.markdown("""
 <style>
-.big-title {
-    font-size: 42px;
-    font-weight: bold;
-}
-
-.sub-text {
-    color: gray;
-    font-size: 16px;
-}
-
+.big-title { font-size: 42px; font-weight: bold; }
+.sub-text { color: gray; font-size: 16px; }
 .card {
     padding: 20px;
     border-radius: 12px;
@@ -42,16 +31,13 @@ st.markdown("""
     color: white;
     box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
 }
-
-.section {
-    margin-top: 30px;
-}
+.section { margin-top: 30px; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # -------------------------------
-# TITLE SECTION (UPDATED)
+# TITLE
 # -------------------------------
 st.markdown('<div class="big-title">PhysioTwin AI</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-text">Personalized Health Simulation System</div>', unsafe_allow_html=True)
@@ -72,6 +58,32 @@ hr = st.sidebar.slider("Max Heart Rate", 60, 200, 150)
 
 
 # -------------------------------
+# SCENARIO BUTTONS (NEW 🔥)
+# -------------------------------
+st.markdown("### Quick Scenarios")
+
+col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+
+scenario = None
+
+with col_s1:
+    if st.button("Healthy"):
+        scenario = "healthy"
+
+with col_s2:
+    if st.button("High Risk"):
+        scenario = "high"
+
+with col_s3:
+    if st.button("Sedentary"):
+        scenario = "sedentary"
+
+with col_s4:
+    if st.button("Athlete"):
+        scenario = "athlete"
+
+
+# -------------------------------
 # INPUT DATA
 # -------------------------------
 input_data = {
@@ -88,6 +100,30 @@ input_data = {
 
 
 # -------------------------------
+# APPLY SCENARIO (NEW 🔥)
+# -------------------------------
+if scenario == "healthy":
+    input_data['resting_blood_pressure'] -= 15
+    input_data['cholestoral'] -= 40
+    input_data['Max_heart_rate'] += 20
+
+elif scenario == "high":
+    input_data['resting_blood_pressure'] += 25
+    input_data['cholestoral'] += 60
+    input_data['Max_heart_rate'] -= 30
+
+elif scenario == "sedentary":
+    input_data['resting_blood_pressure'] += 10
+    input_data['cholestoral'] += 30
+    input_data['Max_heart_rate'] -= 15
+
+elif scenario == "athlete":
+    input_data['resting_blood_pressure'] -= 10
+    input_data['cholestoral'] -= 20
+    input_data['Max_heart_rate'] += 30
+
+
+# -------------------------------
 # EXPLANATION FUNCTION
 # -------------------------------
 def generate_explanation(input_data):
@@ -100,10 +136,10 @@ def generate_explanation(input_data):
         explanations.append("Elevated cholesterol contributes to artery blockage")
 
     if input_data['Max_heart_rate'] < 100:
-        explanations.append("Lower heart rate response may indicate poor cardiac efficiency")
+        explanations.append("Low heart rate may indicate poor cardiac efficiency")
 
     if input_data['age'] > 55:
-        explanations.append("Increased age is associated with higher cardiac risk")
+        explanations.append("Age increases cardiovascular risk")
 
     if len(explanations) == 0:
         explanations.append("All parameters are within healthy range")
@@ -118,7 +154,7 @@ risk = calculate_risk(input_data)
 
 
 # -------------------------------
-# RESULT SECTION (CARD STYLE 🔥)
+# RESULT SECTION
 # -------------------------------
 st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Risk Assessment")
@@ -145,92 +181,48 @@ with col2:
 
 
 # -------------------------------
-# EXPLANATION SECTION (CARD)
+# EXPLANATION
 # -------------------------------
 st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Clinical Explanation")
 
 st.markdown('<div class="card">', unsafe_allow_html=True)
 
-explanations = generate_explanation(input_data)
-
-for exp in explanations:
+for exp in generate_explanation(input_data):
     st.write(f"• {exp}")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
+
 # -------------------------------
-# MULTI GRAPH DASHBOARD (DAY 17 🔥)
+# MULTI GRAPH DASHBOARD
 # -------------------------------
 st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Simulation Dashboard")
 
 col1, col2, col3 = st.columns(3)
 
-# -------------------------------
-# BP GRAPH
-# -------------------------------
 with col1:
-    st.subheader("Blood Pressure")
-
     bp_range = range(90, 180, 5)
-    bp_risks = []
-
-    for val in bp_range:
-        temp = input_data.copy()
-        temp['resting_blood_pressure'] = val
-        bp_risks.append(calculate_risk(temp))
-
-    bp_df = pd.DataFrame({
+    st.line_chart(pd.DataFrame({
         "BP": list(bp_range),
-        "Risk": bp_risks
-    }).set_index("BP")
+        "Risk": [calculate_risk({**input_data, 'resting_blood_pressure': v}) for v in bp_range]
+    }).set_index("BP"))
 
-    st.line_chart(bp_df)
-
-
-# -------------------------------
-# CHOLESTEROL GRAPH
-# -------------------------------
 with col2:
-    st.subheader("Cholesterol")
-
     chol_range = range(150, 350, 10)
-    chol_risks = []
-
-    for val in chol_range:
-        temp = input_data.copy()
-        temp['cholestoral'] = val
-        chol_risks.append(calculate_risk(temp))
-
-    chol_df = pd.DataFrame({
+    st.line_chart(pd.DataFrame({
         "Cholesterol": list(chol_range),
-        "Risk": chol_risks
-    }).set_index("Cholesterol")
+        "Risk": [calculate_risk({**input_data, 'cholestoral': v}) for v in chol_range]
+    }).set_index("Cholesterol"))
 
-    st.line_chart(chol_df)
-
-
-# -------------------------------
-# HEART RATE GRAPH
-# -------------------------------
 with col3:
-    st.subheader("Heart Rate")
-
     hr_range = range(60, 200, 5)
-    hr_risks = []
-
-    for val in hr_range:
-        temp = input_data.copy()
-        temp['Max_heart_rate'] = val
-        hr_risks.append(calculate_risk(temp))
-
-    hr_df = pd.DataFrame({
+    st.line_chart(pd.DataFrame({
         "Heart Rate": list(hr_range),
-        "Risk": hr_risks
-    }).set_index("Heart Rate")
+        "Risk": [calculate_risk({**input_data, 'Max_heart_rate': v}) for v in hr_range]
+    }).set_index("Heart Rate"))
 
-    st.line_chart(hr_df)
 
 # -------------------------------
 # FOOTER
