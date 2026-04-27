@@ -1,32 +1,8 @@
-import pandas as pd
-import joblib
-import numpy as np
+from predictor import calculate_risk
 
-model = joblib.load('models/model.pkl')
-scaler = joblib.load('models/scaler.pkl')
-
-df = pd.read_csv('data/heart.csv')
-df = pd.get_dummies(df, drop_first=True)
-X_columns = df.drop('target', axis=1).columns
-
-def prepare_input(input_dict):
-    input_df = pd.DataFrame([input_dict])
-    input_df = pd.get_dummies(input_df)
-    input_df = input_df.reindex(columns=X_columns, fill_value=0)
-    return scaler.transform(input_df)
-
-def calculate_risk(input_dict):
-    processed = prepare_input(input_dict)
-    risk = model.predict_proba(processed)[0][1]
-    
-    # Add rule-based logic
-    if input_dict['resting_blood_pressure'] > 140:
-        risk += 0.05
-    if input_dict['cholestoral'] > 250:
-        risk += 0.05
-    
-    return min(risk, 1.0)
-
+# -------------------------------
+# BASE PATIENT DATA
+# -------------------------------
 base_patient = {
     'age': 40,
     'sex': 'Male',
@@ -39,19 +15,32 @@ base_patient = {
     'exercise_induced_angina': 'No'
 }
 
-risk = calculate_risk(base_patient)
-print("Base Risk:", risk)
 
+# -------------------------------
+# SINGLE RISK CHECK
+# -------------------------------
+risk = calculate_risk(base_patient)
+print("Base Risk:", round(risk, 3))
+
+
+# -------------------------------
+# BP SIMULATION
+# -------------------------------
 bp_range = range(90, 180, 10)
 risks = []
 
 for bp in bp_range:
-    temp = base_patient.copy()
-    temp['resting_blood_pressure'] = bp
-    
-    r = calculate_risk(temp)
-    risks.append(r)
+    simulated_patient = base_patient.copy()
+    simulated_patient['resting_blood_pressure'] = bp
 
-print("\nSimulation Results:")
+    risk_value = calculate_risk(simulated_patient)
+    risks.append(risk_value)
+
+
+# -------------------------------
+# DISPLAY RESULTS
+# -------------------------------
+print("\nSimulation Results (BP vs Risk):")
+
 for bp, r in zip(bp_range, risks):
-    print(f"BP: {bp} → Risk: {r:.2f}")
+    print(f"Blood Pressure: {bp} → Risk: {r:.2f}")

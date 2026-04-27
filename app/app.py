@@ -1,45 +1,51 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
+import sys
+import os
 
-model = joblib.load('models/model.pkl')
-scaler = joblib.load('models/scaler.pkl')
+# -------------------------------
+# FIX IMPORT PATH (IMPORTANT)
+# -------------------------------
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-df = pd.read_csv('data/heart.csv')
-df = pd.get_dummies(df, drop_first=True)
-X_columns = df.drop('target', axis=1).columns
+# -------------------------------
+# IMPORT CORE LOGIC
+# -------------------------------
+from src.predictor import calculate_risk
 
-def prepare_input(input_dict):
-    input_df = pd.DataFrame([input_dict])
-    input_df = pd.get_dummies(input_df)
-    input_df = input_df.reindex(columns=X_columns, fill_value=0)
-    return scaler.transform(input_df)
 
-def calculate_risk(input_dict):
-    processed = prepare_input(input_dict)
-    risk = model.predict_proba(processed)[0][1]
+# -------------------------------
+# PAGE CONFIG
+# -------------------------------
+st.set_page_config(
+    page_title="PhysioTwin AI",
+    layout="wide"
+)
 
-    if input_dict['resting_blood_pressure'] > 140:
-        risk += 0.05
-    if input_dict['cholestoral'] > 250:
-        risk += 0.05
 
-    return min(risk, 1.0) 
+# -------------------------------
+# TITLE SECTION
+# -------------------------------
+st.title("PhysioTwin AI")
+st.subheader("Personalized Health Risk Simulation System")
+st.write("Simulate how physiological changes affect cardiovascular risk.")
 
-st.title("Personalized Digital Twin for Health Risk Simulation")
-st.write("Simulate how physiological changes affect cardiovascular risk")
 
-age = st.slider("Age", 20, 80, 40)
+# -------------------------------
+# SIDEBAR INPUTS
+# -------------------------------
+st.sidebar.header("Patient Inputs")
 
-sex = st.selectbox("Sex", ["Male", "Female"])
+age = st.sidebar.slider("Age", 20, 80, 40)
+sex = st.sidebar.selectbox("Sex", ["Male", "Female"])
+bp = st.sidebar.slider("Blood Pressure", 80, 200, 120)
+chol = st.sidebar.slider("Cholesterol", 100, 400, 200)
+hr = st.sidebar.slider("Max Heart Rate", 60, 200, 150)
 
-bp = st.slider("Blood Pressure", 80, 200, 120)
 
-chol = st.slider("Cholesterol", 100, 400, 200)
-
-hr = st.slider("Max Heart Rate", 60, 200, 150)
-
+# -------------------------------
+# INPUT DATA
+# -------------------------------
 input_data = {
     'age': age,
     'sex': sex,
@@ -51,47 +57,12 @@ input_data = {
     'Max_heart_rate': hr,
     'exercise_induced_angina': 'No'
 }
-if st.button("Simulate Risk"):
 
-    risk = calculate_risk(input_data)
 
-    st.markdown("---")
-    st.header("Simulation Result")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.metric("Risk Probability", f"{risk*100:.2f}%")
-
-    with col2:
-        if risk > 0.7:
-            st.error("High Risk")
-        elif risk > 0.4:
-            st.warning("Moderate Risk")
-        else:
-            st.success("Low Risk")
-    st.markdown("---")
-    st.header("Clinical Explanation")
-
-    explanations = generate_explanation(input_data, risk)
-
-    for exp in explanations:
-        st.write(f"- {exp}")
-   
-bp_range = range(90, 180, 5)
-risks = []
-
-for val in bp_range:
-    temp = input_data.copy()
-    temp['resting_blood_pressure'] = val
-    risks.append(calculate_risk(temp))
-
-st.line_chart(pd.DataFrame({
-    "BP": list(bp_range),
-    "Risk": risks
-}).set_index("BP"))
-
-def generate_explanation(input_data, risk):
+# -------------------------------
+# EXPLANATION FUNCTION
+# -------------------------------
+def generate_explanation(input_data):
     explanations = []
 
     if input_data['resting_blood_pressure'] > 140:
@@ -111,11 +82,54 @@ def generate_explanation(input_data, risk):
 
     return explanations
 
-st.title("PhysioTwin AI")
-st.subheader("Personalized Health Risk Simulation")
 
+# -------------------------------
+# RISK CALCULATION
+# -------------------------------
+risk = calculate_risk(input_data)
+
+
+# -------------------------------
+# RESULT SECTION (IMPROVED UI)
+# -------------------------------
 st.markdown("---")
-st.header("Patient Input")    
+st.header("Risk Assessment")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric("Risk Probability", f"{risk*100:.2f}%")
+
+with col2:
+    if risk > 0.7:
+        st.error("High Risk")
+    elif risk > 0.4:
+        st.warning("Moderate Risk")
+    else:
+        st.success("Low Risk")
+
+
+# -------------------------------
+# PROGRESS BAR (NEW 🔥)
+# -------------------------------
+st.progress(int(risk * 100))
+
+
+# -------------------------------
+# EXPLANATION SECTION
+# -------------------------------
+st.markdown("---")
+st.header("Clinical Explanation")
+
+explanations = generate_explanation(input_data)
+
+for exp in explanations:
+    st.markdown(f"- **{exp}**")
+
+
+# -------------------------------
+# GRAPH SECTION
+# -------------------------------
 st.markdown("---")
 st.header("Simulation Graph (BP vs Risk)")
 
@@ -123,16 +137,20 @@ bp_range = range(90, 180, 5)
 risks = []
 
 for val in bp_range:
-        temp = input_data.copy()
-        temp['resting_blood_pressure'] = val
-        risks.append(calculate_risk(temp))
+    temp = input_data.copy()
+    temp['resting_blood_pressure'] = val
+    risks.append(calculate_risk(temp))
 
-st.line_chart(pd.DataFrame({
-        "Blood Pressure": list(bp_range),
-        "Risk": risks
-    }).set_index("Blood Pressure"))
+graph_df = pd.DataFrame({
+    "Blood Pressure": list(bp_range),
+    "Risk": risks
+}).set_index("Blood Pressure")
 
+st.line_chart(graph_df)
+
+
+# -------------------------------
+# FOOTER
+# -------------------------------
 st.markdown("---")
 st.warning("This system is for educational purposes only and not a medical diagnosis tool.")
-
-
