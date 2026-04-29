@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 import sys
 import os
 
@@ -7,12 +8,35 @@ import os
 # FIX IMPORT PATH
 # -------------------------------
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src.predictor import calculate_risk
 
 # -------------------------------
 # PAGE CONFIG
 # -------------------------------
 st.set_page_config(page_title="PhysioTwin AI", layout="wide")
+
+# -------------------------------
+# API CONFIG
+# -------------------------------
+API_URL = "http://127.0.0.1:8000/predict"
+
+def get_risk(data):
+    payload = {
+        "age": data["age"],
+        "sex": data["sex"],
+        "resting_blood_pressure": data["resting_blood_pressure"],
+        "cholestoral": data["cholestoral"],
+        "Max_heart_rate": data["Max_heart_rate"]
+    }
+
+    try:
+        response = requests.post(API_URL, json=payload)
+        if response.status_code == 200:
+            return response.json()["risk"]
+        else:
+            return 0
+    except:
+        return 0
+
 
 # -------------------------------
 # CSS
@@ -49,22 +73,12 @@ chol = st.sidebar.slider("Cholesterol", 100, 400, 200)
 hr = st.sidebar.slider("Max Heart Rate", 60, 200, 150)
 
 # -------------------------------
-# SESSION STATE (NEW 🔥)
+# SCENARIO
 # -------------------------------
-if "scenario" not in st.session_state:
-    st.session_state.scenario = "Custom"
-
-# -------------------------------
-# SCENARIO SELECT (REPLACED BUTTONS 🔥)
-# -------------------------------
-st.markdown("### Select Scenario")
-
 scenario = st.selectbox(
     "Choose Lifestyle Scenario",
     ["Custom", "Healthy", "High Risk", "Sedentary", "Athlete"]
 )
-
-st.session_state.scenario = scenario
 
 # -------------------------------
 # INPUT DATA
@@ -82,7 +96,7 @@ input_data = {
 }
 
 # -------------------------------
-# APPLY SCENARIO (AUTO 🔥)
+# APPLY SCENARIO
 # -------------------------------
 if scenario == "Healthy":
     input_data['resting_blood_pressure'] -= 15
@@ -104,10 +118,11 @@ elif scenario == "Athlete":
     input_data['cholestoral'] -= 20
     input_data['Max_heart_rate'] += 30
 
+
 # -------------------------------
-# RISK
+# GET RISK FROM API 🔥
 # -------------------------------
-risk = calculate_risk(input_data)
+risk = get_risk(input_data)
 
 # -------------------------------
 # RESULT
@@ -147,7 +162,7 @@ else:
     st.write("• Healthy cardiovascular condition")
 
 # -------------------------------
-# DASHBOARD
+# DASHBOARD (UPDATED 🔥)
 # -------------------------------
 st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Simulation Dashboard")
@@ -158,21 +173,21 @@ with col1:
     bp_range = range(90, 180, 5)
     st.line_chart(pd.DataFrame({
         "BP": list(bp_range),
-        "Risk": [calculate_risk({**input_data, 'resting_blood_pressure': v}) for v in bp_range]
+        "Risk": [get_risk({**input_data, 'resting_blood_pressure': v}) for v in bp_range]
     }).set_index("BP"))
 
 with col2:
     chol_range = range(150, 350, 10)
     st.line_chart(pd.DataFrame({
         "Chol": list(chol_range),
-        "Risk": [calculate_risk({**input_data, 'cholestoral': v}) for v in chol_range]
+        "Risk": [get_risk({**input_data, 'cholestoral': v}) for v in chol_range]
     }).set_index("Chol"))
 
 with col3:
     hr_range = range(60, 200, 5)
     st.line_chart(pd.DataFrame({
         "HR": list(hr_range),
-        "Risk": [calculate_risk({**input_data, 'Max_heart_rate': v}) for v in hr_range]
+        "Risk": [get_risk({**input_data, 'Max_heart_rate': v}) for v in hr_range]
     }).set_index("HR"))
 
 # -------------------------------
