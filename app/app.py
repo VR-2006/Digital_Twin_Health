@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import requests
 import sys
 import os
 
@@ -10,32 +9,15 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # -------------------------------
+# IMPORT MODEL LOGIC
+# -------------------------------
+from src.predictor import calculate_risk
+
+
+# -------------------------------
 # PAGE CONFIG
 # -------------------------------
 st.set_page_config(page_title="PhysioTwin AI", layout="wide")
-
-# -------------------------------
-# API CONFIG
-# -------------------------------
-API_URL = "http://127.0.0.1:8000/predict"
-
-def get_risk(data):
-    payload = {
-        "age": data["age"],
-        "sex": data["sex"],
-        "resting_blood_pressure": data["resting_blood_pressure"],
-        "cholestoral": data["cholestoral"],
-        "Max_heart_rate": data["Max_heart_rate"]
-    }
-
-    try:
-        response = requests.post(API_URL, json=payload)
-        if response.status_code == 200:
-            return response.json()["risk"]
-        else:
-            return 0
-    except:
-        return 0
 
 
 # -------------------------------
@@ -55,14 +37,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # -------------------------------
 # TITLE
 # -------------------------------
 st.markdown('<div class="big-title">PhysioTwin AI</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-text">Personalized Health Simulation System</div>', unsafe_allow_html=True)
+st.markdown("### 🔍 Real-time Health Simulation Dashboard")
+
 
 # -------------------------------
-# SIDEBAR
+# SIDEBAR INPUTS
 # -------------------------------
 st.sidebar.header("Patient Inputs")
 
@@ -72,6 +57,7 @@ bp = st.sidebar.slider("Blood Pressure", 80, 200, 120)
 chol = st.sidebar.slider("Cholesterol", 100, 400, 200)
 hr = st.sidebar.slider("Max Heart Rate", 60, 200, 150)
 
+
 # -------------------------------
 # SCENARIO
 # -------------------------------
@@ -79,6 +65,7 @@ scenario = st.selectbox(
     "Choose Lifestyle Scenario",
     ["Custom", "Healthy", "High Risk", "Sedentary", "Athlete"]
 )
+
 
 # -------------------------------
 # INPUT DATA
@@ -94,6 +81,7 @@ input_data = {
     'Max_heart_rate': hr,
     'exercise_induced_angina': 'No'
 }
+
 
 # -------------------------------
 # APPLY SCENARIO
@@ -120,9 +108,10 @@ elif scenario == "Athlete":
 
 
 # -------------------------------
-# GET RISK FROM API 🔥
+# CALCULATE RISK (DIRECT MODEL 🔥)
 # -------------------------------
-risk = get_risk(input_data)
+risk = calculate_risk(input_data)
+
 
 # -------------------------------
 # RESULT
@@ -148,6 +137,7 @@ with col2:
         st.success("Low Risk")
     st.markdown('</div>', unsafe_allow_html=True)
 
+
 # -------------------------------
 # EXPLANATION
 # -------------------------------
@@ -161,8 +151,9 @@ elif risk > 0.4:
 else:
     st.write("• Healthy cardiovascular condition")
 
+
 # -------------------------------
-# DASHBOARD (UPDATED 🔥)
+# DASHBOARD
 # -------------------------------
 st.markdown('<div class="section"></div>', unsafe_allow_html=True)
 st.header("Simulation Dashboard")
@@ -173,22 +164,23 @@ with col1:
     bp_range = range(90, 180, 5)
     st.line_chart(pd.DataFrame({
         "BP": list(bp_range),
-        "Risk": [get_risk({**input_data, 'resting_blood_pressure': v}) for v in bp_range]
+        "Risk": [calculate_risk({**input_data, 'resting_blood_pressure': v}) for v in bp_range]
     }).set_index("BP"))
 
 with col2:
     chol_range = range(150, 350, 10)
     st.line_chart(pd.DataFrame({
         "Chol": list(chol_range),
-        "Risk": [get_risk({**input_data, 'cholestoral': v}) for v in chol_range]
+        "Risk": [calculate_risk({**input_data, 'cholestoral': v}) for v in chol_range]
     }).set_index("Chol"))
 
 with col3:
     hr_range = range(60, 200, 5)
     st.line_chart(pd.DataFrame({
         "HR": list(hr_range),
-        "Risk": [get_risk({**input_data, 'Max_heart_rate': v}) for v in hr_range]
+        "Risk": [calculate_risk({**input_data, 'Max_heart_rate': v}) for v in hr_range]
     }).set_index("HR"))
+
 
 # -------------------------------
 # FOOTER
